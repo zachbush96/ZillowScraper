@@ -16,6 +16,10 @@ class Zillow_Scraper_Plugin {
             'dashicons-admin-home',
             20
         );
+        // Enqueue the CSS
+            add_action('admin_enqueue_scripts', function() {
+                wp_enqueue_style('zillow-scraper-plugin-style', ZSP_URL . 'assets/style.css');
+            });
     }
 
     public function render_admin_page() {
