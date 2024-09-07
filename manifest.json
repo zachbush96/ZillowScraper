@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Zillow Listing Scraper",
+  "version": "1.0",
+  "description": "Scrape Zillow listings and send them to your WordPress site.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.zillow.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
