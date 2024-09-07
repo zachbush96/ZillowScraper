@@ -1,0 +1,98 @@
+/* General admin page styling */
+.wrap {
+    margin: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.wrap h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* Table styling */
+.wp-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.wp-list-table thead {
+    background-color: #0073aa;
+    color: #ffffff;
+}
+
+.wp-list-table thead tr th {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #dddddd;
+}
+
+.wp-list-table tbody tr td {
+    padding: 10px;
+    border-bottom: 1px solid #dddddd;
+}
+
+.wp-list-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.wp-list-table tbody tr td a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.wp-list-table tbody tr td a:hover {
+    text-decoration: underline;
+}
+
+/* Status column styling */
+.wp-list-table tbody tr td:last-child {
+    font-weight: bold;
+}
+
+.wp-list-table tbody tr td:last-child span {
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #ffffff;
+}
+
+.wp-list-table tbody tr td:last-child span.draft {
+    background-color: #ffba00;
+}
+
+.wp-list-table tbody tr td:last-child span.pending {
+    background-color: #dd3333;
+}
+
+.wp-list-table tbody tr td:last-child span.publish {
+    background-color: #00a32a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .wp-list-table thead {
+        display: none;
+    }
+
+    .wp-list-table tbody tr {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .wp-list-table tbody tr td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+    }
+
+    .wp-list-table tbody tr td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        padding-left: 10px;
+        font-weight: bold;
+        text-align: left;
+    }
+}
