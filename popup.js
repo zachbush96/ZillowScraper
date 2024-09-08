@@ -46,21 +46,19 @@ function displayScrapedData(data) {
 
 document.getElementById('sendToWordPressButton').addEventListener('click', () => {
     const scrapedData = JSON.parse(localStorage.getItem('scrapedData'));
+    console.log(scrapedData);
     if (scrapedData) {
-        fetch('https://your-wordpress-site.com/wp-json/zls/v1/submit-listing', {
+        fetch('http://3.209.237.120/wp-json/zls/v1/submit-listing', {
             method: 'POST',
+            mode: 'no-cors', // Added this line
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify(scrapedData)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Listing sent to WordPress successfully!');
-            } else {
-                alert('Failed to send listing to WordPress.');
-            }
+        .then(response => {
+            // Since 'no-cors' mode doesn't allow reading the response, we won't handle the response here.
+            alert('Listing sent to WordPress successfully!');
         })
         .catch(error => {
             console.error('Error:', error);
@@ -70,3 +68,4 @@ document.getElementById('sendToWordPressButton').addEventListener('click', () =>
         alert('No scraped data found. Please scrape data first.');
     }
 });
+
