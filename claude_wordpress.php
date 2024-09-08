@@ -106,6 +106,12 @@ class Zillow_Listing_Importer {
     }
 
     public function handle_listing_submission($request) {
+        
+        header("Access-Control-Allow-Origin: chrome-extension://cieaidolioenipcoipaiknkohhhcdpko");
+
+        header("Access-Control-Allow-Methods: POST, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type");
+        
         $params = $request->get_params();
 
         if (!isset($params['address']) || !isset($params['images'])) {
