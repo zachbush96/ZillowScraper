@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Zillow Listing Importer_claude
  * Description: Import Zillow listings from Chrome extension via Claude
- * Version: 1.0
+ * Version: 1.1
  * Author: ZachB.
  */
 
@@ -24,6 +24,9 @@ class Zillow_Listing_Importer {
 
         // Register REST API endpoint
         add_action('rest_api_init', array($this, 'register_api_endpoint'));
+
+        // Handle remove listing request
+        add_action('admin_post_zls_remove_listing', array($this, 'remove_listing'));
     }
 
     public function activate() {
@@ -36,6 +39,9 @@ class Zillow_Listing_Importer {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             address text NOT NULL,
             images longtext NOT NULL,
+            bedrooms int NOT NULL,
+            bathrooms int NOT NULL,
+            sqft int NOT NULL,
             date datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id)
         ) $charset_collate;";
@@ -73,7 +79,11 @@ class Zillow_Listing_Importer {
                     <tr>
                         <th>Address</th>
                         <th>Images</th>
+                        <th>Bedrooms</th>
+                        <th>Bathrooms</th>
+                        <th>Square Feet</th>
                         <th>Date Imported</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,13 +98,53 @@ class Zillow_Listing_Importer {
                                 }
                                 ?>
                             </td>
+                            <td><?php echo esc_html($listing->bedrooms); ?></td>
+                            <td><?php echo esc_html($listing->bathrooms); ?></td>
+                            <td><?php echo esc_html($listing->sqft); ?></td>
                             <td><?php echo esc_html($listing->date); ?></td>
+                            <td>
+                                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display:inline;">
+                                    <?php wp_nonce_field('zls_remove_listing_' . $listing->id, 'zls_remove_listing_nonce'); ?>
+                                    <input type="hidden" name="action" value="zls_remove_listing">
+                                    <input type="hidden" name="listing_id" value="<?php echo esc_attr($listing->id); ?>">
+                                    <button type="submit" class="button action" onclick="return confirm('Are you sure you want to remove this listing?');">Remove</button>
+                                </form>
+                                <button class="button action">Export to WPDK</button>                             
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
         <?php
+    }
+
+    public function remove_listing() {
+        // Check nonce for security
+        if (!isset($_POST['zls_remove_listing_nonce']) || !wp_verify_nonce($_POST['zls_remove_listing_nonce'], 'zls_remove_listing_' . $_POST['listing_id'])) {
+            wp_die('Security check failed');
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_die('You do not have sufficient permissions to perform this action.');
+        }
+
+        if (!isset($_POST['listing_id'])) {
+            wp_die('Invalid request');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'zillow_listings';
+
+        $listing_id = intval($_POST['listing_id']);
+        $result = $wpdb->delete($table_name, array('id' => $listing_id), array('%d'));
+
+        if ($result === false) {
+            wp_die('Failed to remove listing');
+        }
+
+        wp_redirect(admin_url('admin.php?page=zillow-listings'));
+        exit;
     }
 
     public function register_api_endpoint() {
@@ -108,15 +158,29 @@ class Zillow_Listing_Importer {
     public function handle_listing_submission($request) {
         
         header("Access-Control-Allow-Origin: chrome-extension://cieaidolioenipcoipaiknkohhhcdpko");
-
         header("Access-Control-Allow-Methods: POST, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type");
         
         $params = $request->get_params();
 
-        if (!isset($params['address']) || !isset($params['images'])) {
-            return new WP_Error('missing_data', 'Address and images are required', array('status' => 400));
+        //Debug: Log the received params
+        error_log('Received params: ' . print_r($params, true));
+
+        if (empty($params)) {
+            $json = file_get_contents('php://input');
+            $params = json_decode($json, true);
+            // Debug: Log the parsed JSON
+            error_log('Parsed JSON: ' . print_r($params, true));
         }
+
+        if (!isset($params['address']) || !isset($params['images']) || !isset($params['details'])) {
+            return new WP_Error('missing_data', 'Address, images, and details are required', array('status' => 400));
+        }
+
+        // Parse details
+        $bedrooms = isset($params['details'][0][0]) ? intval(str_replace(',', '', $params['details'][0][0])) : 0;
+        $bathrooms = isset($params['details'][1][0]) ? intval(str_replace(',', '', $params['details'][1][0])) : 0;
+        $sqft = isset($params['details'][2][0]) ? intval(str_replace(',', '', $params['details'][2][0])) : 0;
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'zillow_listings';
@@ -125,9 +189,12 @@ class Zillow_Listing_Importer {
             $table_name,
             array(
                 'address' => sanitize_text_field($params['address']),
-                'images' => json_encode(array_map('esc_url_raw', $params['images']))
+                'images' => json_encode(array_map('esc_url_raw', $params['images'])),
+                'bedrooms' => $bedrooms,
+                'bathrooms' => $bathrooms,
+                'sqft' => $sqft,
             ),
-            array('%s', '%s')
+            array('%s', '%s', '%d', '%d', '%d')
         );
 
         if ($result === false) {
